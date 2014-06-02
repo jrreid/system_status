@@ -52,15 +52,26 @@ function drush_system_status_drupalstatus_register($apikey='API-KEY-COMING-SOON'
   $url = "https://www.drupalstatus.org/addSiteUsingKey?key=".$apikey."&siteUrl=" . $siteUrl;
 
   // make request from drupalstatus.org API via curl
-  drush_log($url." is the URL","ok");
-  $response = 0;
+  if(function_exists('curl_version')) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+    $curl_result = curl_exec($ch);
+    curl_close($ch);
+  }
+  $result = json_decode($curl_result);
+
+  //$result will be something like
+  //$result->code = 1,2,3 ...
+  //$result->message = "Blabla";
 
   // check the request
-  if($response == 0) { 
+  if($result->code == 0) { 
     drush_log("This site has been added to drupalstatus.org and will appear shortly", "ok");
-  } elseif($response == 1) {
+  } elseif($result->code == 1) {
     drush_log("This site has already been added to drupalstatus.org", "warn");
   } else {
-    drush_log("This site could not be added to drupalstatus.org", "error");
+    drush_log("This site could not be added to drupalstatus.org. Reason: ".$result->message, "error");
   }
 }
