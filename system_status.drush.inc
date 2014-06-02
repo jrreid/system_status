@@ -38,18 +38,29 @@ function drush_system_status_drupalstatus_register($apikey='API-KEY-COMING-SOON'
     $siteUrl = $base_url;
   }
 
-  // Do an initial verification of the URL
-
+  // Do an initial validation of the URL
   if(!filter_var($siteUrl, FILTER_VALIDATE_URL)) {
     drush_log("The url (".$siteUrl.") for this site does not appear to be valid", "error");
     return;
   }
 
+  // Assemble the URL and token values
   $siteUrl = urlencode($siteUrl);
   $siteUrl .= "|" . $status_token;
   $siteUrl .= "|" . $encrypt_token;
 
   $url = "https://www.drupalstatus.org/addSiteUsingKey?key=".$apikey."&siteUrl=" . $siteUrl;
 
+  // make request from drupalstatus.org API via curl
   drush_log($url." is the URL","ok");
+  $response = 0;
+
+  // check the request
+  if($response == 0) { 
+    drush_log("This site has been added to drupalstatus.org and will appear shortly", "ok");
+  } elseif($response == 1) {
+    drush_log("This site has already been added to drupalstatus.org", "warn");
+  } else {
+    drush_log("This site could not be added to drupalstatus.org", "error");
+  }
 }
