@@ -23,7 +23,7 @@ function system_status_drush_command() {
   return $items;
 }
 
-function drush_system_status_drupalstatus_register($apikey='API-KEY-COMING-SOON') {
+function drush_system_status_drupalstatus_register($apikey) {
 
   $status_token = variable_get('system_status_token','Error-no-token');
   $encrypt_token = variable_get('system_status_encrypt_token', 'Error-no-token');
@@ -44,34 +44,36 @@ function drush_system_status_drupalstatus_register($apikey='API-KEY-COMING-SOON'
     return;
   }
 
+  drush_log("Submitting ".$siteUrl." to drupalstatus.org", "ok");
+
   // Assemble the URL and token values
   $siteUrl = urlencode($siteUrl);
   $siteUrl .= "|" . $status_token;
   $siteUrl .= "|" . $encrypt_token;
 
-  $url = "https://www.drupalstatus.org/addSiteUsingKey?key=".$apikey."&siteUrl=" . $siteUrl;
+  $fields = "key=".$apikey."&siteUrl=" . $siteUrl;
 
   // make request from drupalstatus.org API via curl
   if(function_exists('curl_version')) {
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_URL, "https://drupalstatus.org/api/addSiteUsingKey");
+    curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
     $curl_result = curl_exec($ch);
+    $info = curl_getinfo($ch);
     curl_close($ch);
+  } else {
+    drush_log("CURL support must be present", "error");
+    return;
   }
+
   $result = json_decode($curl_result);
 
-  //$result will be something like
-  //$result->code = 1,2,3 ...
-  //$result->message = "Blabla";
-
   // check the request
-  if($result->code == 0) { 
+  if($result->status == "ok") { 
     drush_log("This site has been added to drupalstatus.org and will appear shortly", "ok");
-  } elseif($result->code == 1) {
-    drush_log("This site has already been added to drupalstatus.org", "warn");
   } else {
-    drush_log("This site could not be added to drupalstatus.org. Reason: ".$result->message, "error");
+    drush_log("This site could not be added to drupalstatus.org. Please verify the URL of the site is correct", "error");
   }
 }
