@@ -11,6 +11,7 @@ function system_status_drush_command() {
     'required-arguments' => TRUE,
     'options' => array(
       'externalurl' => 'The external reachable URL of this site (defaults to $base_url)',
+      'https' => 'Force use of HTTPS',
     ),
     'examples' => array(
       'drush drupalstatus-register ACCOUNT-API-KEY' => 'Register this site with drupalstatus.org.',
@@ -36,6 +37,17 @@ function drush_system_status_drupalstatus_register($apikey) {
     $siteUrl = $externalurl;
   } else {
     $siteUrl = $base_url;
+  }
+
+  // Check if force https
+  if(drush_get_option('https')) {
+    $siteUrl = str_replace('http:', 'https:', $siteUrl);
+
+    // Check that HTTPS is the same site
+    drush_print("Checking HTTPS at ".$siteUrl."/admin/reports/system_status/".$status_token);
+    #$result = drupal_http_request($siteUrl."/admin/reports/system_status/".$status_token);
+    #var_dump($result);
+    #var_dump($siteUrl."/admin/reports/system_status/".$status_token);
   }
 
   // Do an initial validation of the URL
